@@ -2,7 +2,9 @@ import random
 import string
 
 with open ("names_wordlist.txt", "r") as f:
-    names = f.read().splitlines()[:10000]
+    names = f.read().splitlines()
+
+names = random.sample(names, k=10000)
 
 with open ("wordlist_small.txt", "r") as f:
     wordlist = f.read().splitlines()
