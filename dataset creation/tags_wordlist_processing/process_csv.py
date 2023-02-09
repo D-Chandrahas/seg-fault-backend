@@ -6,14 +6,14 @@ import re
 
 # text = re.sub(r"[^\x00-\x7F]+",r"", text)
 text = re.sub(r"'",r"''", text)
-names = text.splitlines()
-for i, name in enumerate(names):
+tags = text.splitlines()
+for i, name in enumerate(tags):
     if name == '' or len(name) > 250:
-        names.pop(i)
+        tags.pop(i)
     else :
-        names[i] = name.strip()
-text = list(set(text))
-print(len(names))
+        tags[i] = name.strip()
+tags = list(set(tags))
+print(len(tags))
 
 with open('../tags_wordlist.txt','w') as f:
-    f.write('\n'.join(names))
+    f.write('\n'.join(tags))
