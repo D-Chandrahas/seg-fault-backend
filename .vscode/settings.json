@@ -1,0 +1,10 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 1000,
+            "driver": "SQLite",
+            "name": "cqadb",
+            "database": "${workspaceFolder:assignment 2}/database/cqadb.sqlite"
+        }
+    ]
+}

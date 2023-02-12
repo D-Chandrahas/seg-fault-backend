@@ -1,3 +1,4 @@
+*.session.sql
 /database/cqadb.db
 /database management/insert_posts.sql
 /database management/insert_users.sql
