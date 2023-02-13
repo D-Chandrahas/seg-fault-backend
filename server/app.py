@@ -7,8 +7,8 @@ con = sqlite3.connect("../database/cqadb.sqlite",check_same_thread=False)
 con.execute("PRAGMA foreign_keys = ON")
 cur = con.cursor()
 
-# * /login1?username=<username>&password=<password>
-@app.route("/login1")
+# * /login1?username=<username:250>&password=<password:250>
+@app.route("/login1",methods=["GET"])
 def login1():
     username = request.args.get("username")
     password = request.args.get("password")
@@ -20,14 +20,14 @@ def login1():
 # {
 #     "auth_status":<bool>
 # }
-
+# ----------------------------------------------
 
 # * /login2
 # {
-#   "username": <string>,
-#   "password": <string>
+#   "username": <string:250>,
+#   "password": <string:250>
 # }
-@app.route("/login2")
+@app.route("/login2",methods=["GET"])
 def login1():
     username = request.json.get("username")
     password = request.json.get("password")
@@ -39,9 +39,9 @@ def login1():
 # {
 #     "auth_status":<bool>
 # }
+# ----------------------------------------------
 
-
-# * /register?username=<string>&password=<string>
+# * /register?username=<string:250>&password=<string:250>
 @app.route("/register",methods=["POST"])
 def register():
     username = request.args.get("username")
@@ -56,43 +56,139 @@ def register():
 # {
 #     "register_status":<bool>
 # }
+# ----------------------------------------------
 
-
-# * /upvote/post?post_id=<int>
-@app.route("/upvote/post",methods=["POST"])
+# * /post/upvote?post_id=<int>
+@app.route("/post/upvote",methods=["POST"])
 def upvote_post():
     post_id = request.args.get("post_id")
     cur.execute("UPDATE posts SET upvotes = upvotes + 1 WHERE post_id = ?",(post_id,))
     con.commit()
     return Response(status=204)
 # no response body
+# ----------------------------------------------
 
-
-# * /downvote/post?post_id=<int>
-@app.route("/downvote/post",methods=["POST"])
+# * /post/downvote?post_id=<int>
+@app.route("/post/downvote",methods=["POST"])
 def downvote_post():
     post_id = request.args.get("post_id")
     cur.execute("UPDATE posts SET upvotes = upvotes - 1 WHERE post_id = ?",(post_id,))
     con.commit()
     return Response(status=204)
 # no response body
+# ----------------------------------------------
 
-
-# * /upvote/reply?reply_id=<int>
-@app.route("/upvote/reply",methods=["POST"])
+# * /reply/upvote?reply_id=<int>
+@app.route("/reply/upvote",methods=["POST"])
 def upvote_reply():
     reply_id = request.args.get("reply_id")
     cur.execute("UPDATE replies SET upvotes = upvotes + 1 WHERE reply_id = ?",(reply_id,))
     con.commit()
     return Response(status=204)
 # no response body
+# ----------------------------------------------
 
-
-# * /downvote/reply?reply_id=<int>
-@app.route("/downvote/reply",methods=["POST"])
+# * /reply/downvote?reply_id=<int>
+@app.route("/reply/downvote",methods=["POST"])
 def downvote_reply():
     reply_id = request.args.get("reply_id")
     cur.execute("UPDATE replies SET upvotes = upvotes - 1 WHERE reply_id = ?",(reply_id,))
     con.commit()
     return Response(status=204)
 # no response body
+# ----------------------------------------------
+
+# * /post/create
+# {
+#     "user_id": <int>,
+#     "title": <string:500>,
+#     "tags": [
+#         <string:50> :10
+#         ],
+#     "body": <string>
+# }
+@app.route("/post/create",methods=["POST"])
+def create_post():
+    user_id = request.json.get("user_id")
+    title = request.json.get("title")
+    tags = "\n".join(request.json.get("tags"))
+    body = request.json.get("body")
+    cur.execute("INSERT INTO posts(user_id,title,tags,body) VALUES (?,?,?,?)",(user_id,title,tags,body))
+    con.commit()
+    return Response(status=204)
+# no response body
+# ----------------------------------------------
+
+# * /post/edit
+# {
+#     "post_id": <int>,
+#     "title": <string:500>,
+#     "tags": [
+#         <string:50> :10
+#         ],
+#     "body": <string>
+# }
+@app.route("/post/edit",methods=["POST"])
+def edit_post():
+    post_id = request.json.get("post_id")
+    title = request.json.get("title")
+    tags = "\n".join(request.json.get("tags"))
+    body = request.json.get("body")
+    cur.execute("UPDATE posts SET title = ?, tags = ?, body = ? WHERE post_id = ?",(title,tags,body,post_id))
+    con.commit()
+    return Response(status=204)
+# no response body
+# ----------------------------------------------
+
+# * /post/delete?post_id=<int>
+@app.route("/post/delete",methods=["POST"])
+def delete_post():
+    post_id = request.args.get("post_id")
+    cur.execute("DELETE FROM replies WHERE post_id = ?",(post_id,))
+    cur.execute("DELETE FROM posts WHERE post_id = ?",(post_id,))
+    con.commit()
+    return Response(status=204)
+# no response body
+# ----------------------------------------------
+
+# * /reply/create
+# {
+#     "post_id": <int>,
+#     "user_id": <int>,
+#     "body": <string>,
+# }
+@app.route("/reply/create",methods=["POST"])
+def create_reply():
+    post_id = request.json.get("post_id")
+    user_id = request.json.get("user_id")
+    body = request.json.get("body")
+    cur.execute("INSERT INTO replies(post_id,user_id,body) VALUES (?,?,?)",(post_id,user_id,body))
+    con.commit()
+    return Response(status=204)
+# no response body
+# ----------------------------------------------
+
+# * /reply/edit
+# {
+#     "reply_id": <int>,
+#     "body": <string>,
+# }
+@app.route("/reply/edit",methods=["POST"])
+def edit_reply():
+    reply_id = request.json.get("reply_id")
+    body = request.json.get("body")
+    cur.execute("UPDATE replies SET body = ? WHERE reply_id = ?",(body,reply_id))
+    con.commit()
+    return Response(status=204)
+# no response body
+# ----------------------------------------------
+
+# * /reply/delete?reply_id=<int>
+@app.route("/reply/delete",methods=["POST"])
+def delete_reply():
+    reply_id = request.args.get("reply_id")
+    cur.execute("DELETE FROM replies WHERE reply_id = ?",(reply_id,))
+    con.commit()
+    return Response(status=204)
+# no response body
+# ----------------------------------------------
