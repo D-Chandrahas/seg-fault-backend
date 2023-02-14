@@ -184,9 +184,10 @@ def get_user_posts():
     user_id = request.args.get("user_id",type=int)
     order_by = request.args.get("order_by",type=str)
     page = request.args.get("page",type=int)
-    posts = {"posts":[]}
+    posts = {}
     res = cur.execute("SELECT COUNT(*) FROM posts WHERE user_id = ?",(user_id,))
     posts["total_pages"] = math.ceil(res.fetchone()[0]/POSTS_PER_PAGE)
+    posts["posts"] = []
     if order_by == "time_asc": order_by = "time ASC"
     elif order_by == "time_desc": order_by = "time DESC"
     elif order_by == "votes_asc": order_by = "upvotes ASC"
