@@ -8,30 +8,11 @@ con = sqlite3.connect("../database/cqadb.sqlite",check_same_thread=False)
 con.execute("PRAGMA foreign_keys = ON")
 cur = con.cursor()
 
-# * /login1?username=<string:250>&password=<string:250>
-@app.route("/login1",methods=["GET"])
-def login1():
+# * /login?username=<string:250>&password=<string:250>
+@app.route("/login",methods=["GET"])
+def login():
     username = request.args.get("username")
     password = request.args.get("password")
-    res = cur.execute("SELECT * FROM users WHERE username = ? AND password = ?",(username,password))
-    if res.fetchone() is None:
-        return {"auth_status":False}
-    else:
-        return {"auth_status":True}
-# {
-#     "auth_status":<bool>
-# }
-# ----------------------------------------------
-
-# * /login2
-# {
-#   "username": <string:250>,
-#   "password": <string:250>
-# }
-@app.route("/login2",methods=["GET"])
-def login2():
-    username = request.json.get("username")
-    password = request.json.get("password")
     res = cur.execute("SELECT * FROM users WHERE username = ? AND password = ?",(username,password))
     if res.fetchone() is None:
         return {"auth_status":False}
