@@ -14,12 +14,14 @@ def login():
     username = request.args.get("username")
     password = request.args.get("password")
     res = cur.execute("SELECT * FROM users WHERE username = ? AND password = ?",(username,password))
-    if res.fetchone() is None:
-        return {"auth_status":False}
+    row = res.fetchone()
+    if row is None:
+        return {"auth_status":False, "user_id":None}
     else:
-        return {"auth_status":True}
+        return {"auth_status":True, "user_id":row[0]}
 # {
 #     "auth_status":<bool>
+#     "user_id":<int/null>
 # }
 # ----------------------------------------------
 
