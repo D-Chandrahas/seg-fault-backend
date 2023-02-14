@@ -178,7 +178,7 @@ def delete_reply():
 # * /user/posts?user_id=<int>&page=<int>&order_by=<string:[time_asc, time_desc, votes_asc, votes_desc]>
 @app.route("/user/posts",methods=["GET"])
 def get_user_posts():
-    POSTS_PER_PAGE = 5
+    POSTS_PER_PAGE = 15
     user_id = request.args.get("user_id",type=int)
     order_by = request.args.get("order_by",type=str)
     page = request.args.get("page",type=int)
