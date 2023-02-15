@@ -29,7 +29,7 @@ def login():
 #     "auth_status": <bool>
 #     "user_id": <int/null>
 # }
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /register?username=<string:250>&password=<string:250>
 @app.route("/register",methods=["POST"])
@@ -48,7 +48,7 @@ def register():
 # {
 #     "register_status": <bool>
 # }
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /post/upvote?post_id=<int>
 @app.route("/post/upvote",methods=["POST"])
@@ -60,7 +60,7 @@ def upvote_post():
     con.commit()
     return Response(status=202)
 # no response body
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /post/downvote?post_id=<int>
 @app.route("/post/downvote",methods=["POST"])
@@ -72,7 +72,7 @@ def downvote_post():
     con.commit()
     return Response(status=202)
 # no response body
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /reply/upvote?reply_id=<int>
 @app.route("/reply/upvote",methods=["POST"])
@@ -84,7 +84,7 @@ def upvote_reply():
     con.commit()
     return Response(status=202)
 # no response body
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /reply/downvote?reply_id=<int>
 @app.route("/reply/downvote",methods=["POST"])
@@ -96,7 +96,7 @@ def downvote_reply():
     con.commit()
     return Response(status=202)
 # no response body
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /post/create
 # {
@@ -128,7 +128,7 @@ def create_post():
     con.commit()
     return Response(status=202)
 # no response body
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /post/edit
 # {
@@ -160,7 +160,7 @@ def edit_post():
     con.commit()
     return Response(status=202)
 # no response body
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /post/delete?post_id=<int>
 @app.route("/post/delete",methods=["POST"])
@@ -173,7 +173,7 @@ def delete_post():
     con.commit()
     return Response(status=202)
 # no response body
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /reply/create
 # {
@@ -194,7 +194,7 @@ def create_reply():
     con.commit()
     return Response(status=202)
 # no response body
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /reply/edit
 # {
@@ -213,7 +213,7 @@ def edit_reply():
     con.commit()
     return Response(status=202)
 # no response body
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /reply/delete?reply_id=<int>
 @app.route("/reply/delete",methods=["POST"])
@@ -225,7 +225,7 @@ def delete_reply():
     con.commit()
     return Response(status=202)
 # no response body
-# ----------------------------------------------
+# * ----------------------------------------------
 
 # * /user/posts?user_id=<int>&page=<int>&order_by=<string:[time_asc, time_desc, votes_asc, votes_desc]>
 @app.route("/user/posts",methods=["GET"])
@@ -236,6 +236,8 @@ def get_user_posts():
     page = request.args.get("page",type=int)
     if user_id is None or order_by is None or page is None:
         return Response(status=400)
+    if page < 1:
+        return Response(status=400)
     if order_by == "time_asc": order_by = "time ASC"
     elif order_by == "time_desc": order_by = "time DESC"
     elif order_by == "votes_asc": order_by = "upvotes ASC"
@@ -244,8 +246,12 @@ def get_user_posts():
     posts = {}
     res = cur.execute("SELECT COUNT(*) FROM posts WHERE user_id = ?",(user_id,))
     posts["total_pages"] = math.ceil(res.fetchone()[0]/POSTS_PER_PAGE)
-    res = cur.execute(f"SELECT * FROM posts WHERE user_id = ? ORDER BY {order_by} LIMIT ? OFFSET ?",(user_id, POSTS_PER_PAGE,(page-1)*POSTS_PER_PAGE))
     posts["posts"] = []
+    if posts["total_pages"] == 0:
+        return posts
+    if page > posts["total_pages"]:
+        return Response(status=400)
+    res = cur.execute(f"SELECT * FROM posts WHERE user_id = ? ORDER BY {order_by} LIMIT ? OFFSET ?",(user_id, POSTS_PER_PAGE,(page-1)*POSTS_PER_PAGE))
     for row in res:
         post = {}
         post["post_id"] = row[0]
@@ -272,7 +278,52 @@ def get_user_posts():
 #         } :$POSTS_PER_PAGE
 #     ]
 # }
-# ----------------------------------------------
+# * ----------------------------------------------
+
+# * /search/user?username=<string:250>&page=<int>
+@app.route("/search/user",methods=["GET"])
+def search_user():
+    USERNAMES_PER_PAGE = 15
+    username = request.args.get("username")
+    page = request.args.get("page",type=int)
+    if username is None or page is None:
+        return Response(status=400)
+    if page < 1:
+        return Response(status=400)
+    username = username.strip().replace(" ","%")
+    usernames = {}
+    res = cur.execute("SELECT COUNT(*) FROM users WHERE username LIKE ?",("%"+username+"%",))
+    usernames["total_pages"] = math.ceil(res.fetchone()[0]/USERNAMES_PER_PAGE)
+    usernames["usernames"] = []
+    if usernames["total_pages"] == 0:
+        return usernames
+    if page > usernames["total_pages"]:
+        return Response(status=400)
+    res = cur.execute("SELECT username FROM users WHERE username LIKE ? LIMIT ? OFFSET ?",("%"+username+"%", USERNAMES_PER_PAGE,(page-1)*USERNAMES_PER_PAGE))
+    for row in res:
+        usernames["usernames"].append(row[0])
+    return usernames
+# {
+#     "total_pages": <int>,
+#     "usernames": [
+#         <string:250> :$USERNAMES_PER_PAGE
+#     ]
+# }
+# * ----------------------------------------------
+
+# * /search/tags
+# {
+#     "tags": [
+#         <string:30> :1674
+#     ]
+#     "page": <int>,
+#     "order_by": <string:[time_asc, time_desc, votes_asc, votes_desc]>
+# }
+@app.route("/search/tags",methods=["GET"])
+def search_tags():
+    pass
+
+
 
 # * /all_tags
 @app.route("/all_tags",methods=["GET"])
@@ -283,3 +334,4 @@ def get_all_tags():
 #         <string:30> :1674
 #     ]
 # }
+# * ----------------------------------------------
