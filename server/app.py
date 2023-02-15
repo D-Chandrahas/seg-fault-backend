@@ -2,11 +2,15 @@ from flask import Flask, request, Response
 import sqlite3
 import math
 
+
 app = Flask(__name__)
 
 con = sqlite3.connect("../database/cqadb.sqlite",check_same_thread=False)
 con.execute("PRAGMA foreign_keys = ON")
 cur = con.cursor()
+
+with open("../database/tags.txt",'r') as f:
+    all_tags = f.read().splitlines()
 
 # * /login?username=<string:250>&password=<string:250>
 @app.route("/login",methods=["GET"])
@@ -99,7 +103,7 @@ def downvote_reply():
 #     "user_id": <int>,
 #     "title": <string:500>,
 #     "tags": [
-#         <string:50> :10
+#         <string:30> :10
 #     ],
 #     "body": <string>
 # }
@@ -110,8 +114,13 @@ def create_post():
     user_id = request.json.get("user_id")
     title = request.json.get("title")
     if request.json.get("tags") is None:
-        tags = ""
-    tags = "\n".join(request.json.get("tags"))
+        tags = []
+    else:
+        tags = request.json.get("tags")
+    for i,tag in enumerate(tags):
+        if tag not in all_tags:
+            tags.pop(i)
+    tags = "\n".join(tags)
     body = request.json.get("body")
     if user_id is None or title is None or body is None:
         return Response(status=400)
@@ -126,7 +135,7 @@ def create_post():
 #     "post_id": <int>,
 #     "title": <string:500>,
 #     "tags":[
-#         <string:50> :10
+#         <string:30> :10
 #     ],
 #     "body": <string>
 # }
@@ -137,8 +146,13 @@ def edit_post():
     post_id = request.json.get("post_id")
     title = request.json.get("title")
     if request.json.get("tags") is None:
-        tags = ""
-    tags = "\n".join(request.json.get("tags"))
+        tags = []
+    else:
+        tags = request.json.get("tags")
+    for i,tag in enumerate(tags):
+        if tag not in all_tags:
+            tags.pop(i)
+    tags = "\n".join(tags)
     body = request.json.get("body")
     if post_id is None or title is None or body is None:
         return Response(status=400)
@@ -250,7 +264,7 @@ def get_user_posts():
 #             "post_id": <int>,
 #             "title": <string:500>,
 #             "tags": [
-#                 <string:50> :10
+#                 <string:30> :10
 #             ],
 #             "body": <string>
 #             "upvotes": <int>,
@@ -260,3 +274,12 @@ def get_user_posts():
 # }
 # ----------------------------------------------
 
+# * /all_tags
+@app.route("/all_tags",methods=["GET"])
+def get_all_tags():
+    return {"all_tags": all_tags}
+# {
+#     "all_tags": [
+#         <string:30> :1674
+#     ]
+# }
