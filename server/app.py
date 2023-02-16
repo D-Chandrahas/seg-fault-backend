@@ -148,6 +148,7 @@ def create_post():
     body = request.json.get("body")
     if user_id is None or title is None or body is None:
         return Response(status=400)
+    # todo check if user exists
     cur.execute("INSERT INTO posts(user_id,title,tags,body) VALUES (?,?,?,?)",(user_id,title,tags,body))
     con.commit()
     return Response(status=202)
@@ -180,6 +181,7 @@ def edit_post():
     body = request.json.get("body")
     if post_id is None or title is None or body is None:
         return Response(status=400)
+    # todo check if post exists
     cur.execute("UPDATE posts SET title = ?, tags = ?, body = ? WHERE post_id = ?",(title,tags,body,post_id))
     con.commit()
     return Response(status=202)
@@ -192,8 +194,12 @@ def delete_post():
     post_id = request.args.get("post_id",type=int)
     if post_id is None:
         return Response(status=400)
+    # todo check if post exists
+    res = cur.execute("SELECT reply_id FROM replies WHERE post_id = ?",(post_id,))
+    reply_ids = res.fetchall()
+    for reply_id, in reply_ids:
+        cur.execute("DELETE FROM reply_votes WHERE reply_id = ?",(reply_id,))
     cur.execute("DELETE FROM post_votes WHERE post_id = ?",(post_id,))
-    # todo delete reply votes
     cur.execute("DELETE FROM replies WHERE post_id = ?",(post_id,))
     cur.execute("DELETE FROM posts WHERE post_id = ?",(post_id,))
     con.commit()
@@ -216,6 +222,7 @@ def create_reply():
     body = request.json.get("body")
     if post_id is None or user_id is None or body is None:
         return Response(status=400)
+    # todo check if post and user exists
     cur.execute("INSERT INTO replies(post_id,user_id,body) VALUES (?,?,?)",(post_id,user_id,body))
     con.commit()
     return Response(status=202)
@@ -235,6 +242,7 @@ def edit_reply():
     body = request.json.get("body")
     if reply_id is None or body is None:
         return Response(status=400)
+    # todo check if reply exists
     cur.execute("UPDATE replies SET body = ? WHERE reply_id = ?",(body,reply_id))
     con.commit()
     return Response(status=202)
@@ -247,6 +255,7 @@ def delete_reply():
     reply_id = request.args.get("reply_id",type=int)
     if reply_id is None:
         return Response(status=400)
+    # todo check if reply exists
     cur.execute("DELETE FROM reply_votes WHERE reply_id = ?",(reply_id,))
     cur.execute("DELETE FROM replies WHERE reply_id = ?",(reply_id,))
     con.commit()
@@ -350,6 +359,8 @@ def search_user():
 @app.route("/search/tags",methods=["GET"])
 def search_tags():
     pass
+
+# * ----------------------------------------------
 
 # * /post/?post_id=<int>
 @app.route("/post",methods=["GET"])
