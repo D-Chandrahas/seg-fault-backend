@@ -57,8 +57,23 @@ def upvote_post():
     user_id = request.args.get("user_id",type=int)
     if post_id is None or user_id is None:
         return Response(status=400)
-    # todo
-    return Response(status=202)
+    res = cur.execute("SELECT * FROM posts WHERE post_id = ?",(post_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT * FROM users WHERE user_id = ?",(user_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT vote FROM post_votes WHERE post_id = ? AND user_id = ?",(post_id,user_id))
+    row = res.fetchone()
+    if row is None:
+        cur.execute("INSERT INTO post_votes(post_id,user_id,vote) VALUES (?,?,'u')",(post_id,user_id))
+        cur.execute("UPDATE posts SET upvotes = upvotes + 1 WHERE post_id = ?",(post_id,))
+        con.commit()
+    elif row[0] == 'd':
+        cur.execute("UPDATE post_votes SET vote = 'u' WHERE post_id = ? AND user_id = ?",(post_id,user_id))
+        cur.execute("UPDATE posts SET upvotes = upvotes + 2 WHERE post_id = ?",(post_id,))
+        con.commit()
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
@@ -69,8 +84,23 @@ def novote_post():
     user_id = request.args.get("user_id",type=int)
     if post_id is None or user_id is None:
         return Response(status=400)
-    # todo
-    return Response(status=202)
+    res = cur.execute("SELECT * FROM posts WHERE post_id = ?",(post_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT * FROM users WHERE user_id = ?",(user_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT vote FROM post_votes WHERE post_id = ? AND user_id = ?",(post_id,user_id))
+    row = res.fetchone()
+    if row[0] == 'd':
+        cur.execute("DELETE FROM post_votes WHERE post_id = ? AND user_id = ?",(post_id,user_id))
+        cur.execute("UPDATE posts SET upvotes = upvotes + 1 WHERE post_id = ?",(post_id,))
+        con.commit()
+    elif row[0] == 'u':
+        cur.execute("DELETE FROM post_votes WHERE post_id = ? AND user_id = ?",(post_id,user_id))
+        cur.execute("UPDATE posts SET upvotes = upvotes - 1 WHERE post_id = ?",(post_id,))
+        con.commit()
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
@@ -81,8 +111,22 @@ def downvote_post():
     user_id = request.args.get("user_id",type=int)
     if post_id is None or user_id is None:
         return Response(status=400)
-    # todo
-    return Response(status=202)
+    res = cur.execute("SELECT * FROM posts WHERE post_id = ?",(post_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT * FROM users WHERE user_id = ?",(user_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT vote FROM post_votes WHERE post_id = ? AND user_id = ?",(post_id,user_id))
+    row = res.fetchone()
+    if row is None:
+        cur.execute("INSERT INTO post_votes(post_id,user_id,vote) VALUES (?,?,'d')",(post_id,user_id))
+        cur.execute("UPDATE posts SET upvotes = upvotes - 1 WHERE post_id = ?",(post_id,))
+        con.commit()
+    elif row[0] == 'u':
+        cur.execute("UPDATE post_votes SET vote = 'd' WHERE post_id = ? AND user_id = ?",(post_id,user_id))
+        cur.execute("UPDATE posts SET upvotes = upvotes - 2 WHERE post_id = ?",(post_id,))
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
@@ -93,8 +137,23 @@ def upvote_reply():
     user_id = request.args.get("user_id",type=int)
     if reply_id is None or user_id is None:
         return Response(status=400)
-    # todo
-    return Response(status=202)
+    res = cur.execute("SELECT * FROM replies WHERE reply_id = ?",(reply_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT * FROM users WHERE user_id = ?",(user_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT vote FROM reply_votes WHERE reply_id = ? AND user_id = ?",(reply_id,user_id))
+    row = res.fetchone()
+    if row is None:
+        cur.execute("INSERT INTO reply_votes(reply_id,user_id,vote) VALUES (?,?,'u')",(reply_id,user_id))
+        cur.execute("UPDATE replies SET upvotes = upvotes + 1 WHERE reply_id = ?",(reply_id,))
+        con.commit()
+    elif row[0] == 'd':
+        cur.execute("UPDATE reply_votes SET vote = 'u' WHERE reply_id = ? AND user_id = ?",(reply_id,user_id))
+        cur.execute("UPDATE replies SET upvotes = upvotes + 2 WHERE reply_id = ?",(reply_id,))
+        con.commit()
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
@@ -105,8 +164,23 @@ def novote_reply():
     user_id = request.args.get("user_id",type=int)
     if reply_id is None or user_id is None:
         return Response(status=400)
-    # todo
-    return Response(status=202)
+    res = cur.execute("SELECT * FROM replies WHERE reply_id = ?",(reply_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT * FROM users WHERE user_id = ?",(user_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT vote FROM reply_votes WHERE reply_id = ? AND user_id = ?",(reply_id,user_id))
+    row = res.fetchone()
+    if row[0] == 'd':
+        cur.execute("DELETE FROM reply_votes WHERE reply_id = ? AND user_id = ?",(reply_id,user_id))
+        cur.execute("UPDATE replies SET upvotes = upvotes + 1 WHERE reply_id = ?",(reply_id,))
+        con.commit()
+    elif row[0] == 'u':
+        cur.execute("DELETE FROM reply_votes WHERE reply_id = ? AND user_id = ?",(reply_id,user_id))
+        cur.execute("UPDATE replies SET upvotes = upvotes - 1 WHERE reply_id = ?",(reply_id,))
+        con.commit()
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
@@ -117,8 +191,22 @@ def downvote_reply():
     user_id = request.args.get("user_id",type=int)
     if reply_id is None or user_id is None:
         return Response(status=400)
-    # todo
-    return Response(status=202)
+    res = cur.execute("SELECT * FROM replies WHERE reply_id = ?",(reply_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT * FROM users WHERE user_id = ?",(user_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT vote FROM reply_votes WHERE reply_id = ? AND user_id = ?",(reply_id,user_id))
+    row = res.fetchone()
+    if row is None:
+        cur.execute("INSERT INTO reply_votes(reply_id,user_id,vote) VALUES (?,?,'d')",(reply_id,user_id))
+        cur.execute("UPDATE replies SET upvotes = upvotes - 1 WHERE reply_id = ?",(reply_id,))
+        con.commit()
+    elif row[0] == 'u':
+        cur.execute("UPDATE reply_votes SET vote = 'd' WHERE reply_id = ? AND user_id = ?",(reply_id,user_id))
+        cur.execute("UPDATE replies SET upvotes = upvotes - 2 WHERE reply_id = ?",(reply_id,))
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
@@ -148,10 +236,12 @@ def create_post():
     body = request.json.get("body")
     if user_id is None or title is None or body is None:
         return Response(status=400)
-    # todo check if user exists
+    res = cur.execute("SELECT * FROM users WHERE user_id = ?",(user_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
     cur.execute("INSERT INTO posts(user_id,title,tags,body) VALUES (?,?,?,?)",(user_id,title,tags,body))
     con.commit()
-    return Response(status=202)
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
@@ -181,10 +271,12 @@ def edit_post():
     body = request.json.get("body")
     if post_id is None or title is None or body is None:
         return Response(status=400)
-    # todo check if post exists
+    res = cur.execute("SELECT * FROM posts WHERE post_id = ?",(post_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
     cur.execute("UPDATE posts SET title = ?, tags = ?, body = ? WHERE post_id = ?",(title,tags,body,post_id))
     con.commit()
-    return Response(status=202)
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
@@ -194,7 +286,9 @@ def delete_post():
     post_id = request.args.get("post_id",type=int)
     if post_id is None:
         return Response(status=400)
-    # todo check if post exists
+    res = cur.execute("SELECT * FROM posts WHERE post_id = ?",(post_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
     res = cur.execute("SELECT reply_id FROM replies WHERE post_id = ?",(post_id,))
     reply_ids = res.fetchall()
     for reply_id, in reply_ids:
@@ -203,7 +297,7 @@ def delete_post():
     cur.execute("DELETE FROM replies WHERE post_id = ?",(post_id,))
     cur.execute("DELETE FROM posts WHERE post_id = ?",(post_id,))
     con.commit()
-    return Response(status=202)
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
@@ -222,10 +316,15 @@ def create_reply():
     body = request.json.get("body")
     if post_id is None or user_id is None or body is None:
         return Response(status=400)
-    # todo check if post and user exists
+    res = cur.execute("SELECT * FROM posts WHERE post_id = ?",(post_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
+    res = cur.execute("SELECT * FROM users WHERE user_id = ?",(user_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
     cur.execute("INSERT INTO replies(post_id,user_id,body) VALUES (?,?,?)",(post_id,user_id,body))
     con.commit()
-    return Response(status=202)
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
@@ -242,10 +341,12 @@ def edit_reply():
     body = request.json.get("body")
     if reply_id is None or body is None:
         return Response(status=400)
-    # todo check if reply exists
+    res = cur.execute("SELECT * FROM replies WHERE reply_id = ?",(reply_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
     cur.execute("UPDATE replies SET body = ? WHERE reply_id = ?",(body,reply_id))
     con.commit()
-    return Response(status=202)
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
@@ -255,11 +356,13 @@ def delete_reply():
     reply_id = request.args.get("reply_id",type=int)
     if reply_id is None:
         return Response(status=400)
-    # todo check if reply exists
+    res = cur.execute("SELECT * FROM replies WHERE reply_id = ?",(reply_id,))
+    if res.fetchone() is None:
+        return Response(status=400)
     cur.execute("DELETE FROM reply_votes WHERE reply_id = ?",(reply_id,))
     cur.execute("DELETE FROM replies WHERE reply_id = ?",(reply_id,))
     con.commit()
-    return Response(status=202)
+    return Response(status=200)
 # no response body
 # * ----------------------------------------------
 
