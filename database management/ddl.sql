@@ -25,3 +25,21 @@ CREATE TABLE replies (
 	FOREIGN KEY (post_id) REFERENCES posts(post_id),
 	FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+CREATE TABLE post_votes (
+	post_id INTEGER,
+	user_id INTEGER,
+	vote CHAR(1) CHECK (vote IN ('u', 'd')),
+	PRIMARY KEY (post_id, user_id),
+	FOREIGN KEY (post_id) REFERENCES posts(post_id),
+	FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE reply_votes (
+	reply_id INTEGER,
+	user_id INTEGER,
+	vote CHAR(1) CHECK (vote IN ('u', 'd')),
+	PRIMARY KEY (reply_id, user_id),
+	FOREIGN KEY (reply_id) REFERENCES replies(reply_id),
+	FOREIGN KEY (user_id) REFERENCES users(user_id)
+);

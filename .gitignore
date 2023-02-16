@@ -4,6 +4,8 @@
 /database management/insert_posts.sql
 /database management/insert_users.sql
 /database management/insert_replies.sql
+/database management/insert_post_votes.sql
+/database management/insert_reply_votes.sql
 /dataset creation/names_wordlist_processing/xml/*.xml
 /dataset creation/tags_wordlist_processing/xml/*.xml
 

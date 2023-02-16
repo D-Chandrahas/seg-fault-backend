@@ -50,50 +50,74 @@ def register():
 # }
 # * ----------------------------------------------
 
-# * /post/upvote?post_id=<int>
+# * /post/upvote?post_id=<int>&user_id=<int>
 @app.route("/post/upvote",methods=["POST"])
 def upvote_post():
     post_id = request.args.get("post_id",type=int)
-    if post_id is None:
+    user_id = request.args.get("user_id",type=int)
+    if post_id is None or user_id is None:
         return Response(status=400)
-    cur.execute("UPDATE posts SET upvotes = upvotes + 1 WHERE post_id = ?",(post_id,))
-    con.commit()
+    # todo
     return Response(status=202)
 # no response body
 # * ----------------------------------------------
 
-# * /post/downvote?post_id=<int>
+# * /post/novote?post_id=<int>&user_id=<int>
+@app.route("/post/novote",methods=["POST"])
+def novote_post():
+    post_id = request.args.get("post_id",type=int)
+    user_id = request.args.get("user_id",type=int)
+    if post_id is None or user_id is None:
+        return Response(status=400)
+    # todo
+    return Response(status=202)
+# no response body
+# * ----------------------------------------------
+
+# * /post/downvote?post_id=<int>&user_id=<int>
 @app.route("/post/downvote",methods=["POST"])
 def downvote_post():
     post_id = request.args.get("post_id",type=int)
-    if post_id is None:
+    user_id = request.args.get("user_id",type=int)
+    if post_id is None or user_id is None:
         return Response(status=400)
-    cur.execute("UPDATE posts SET upvotes = upvotes - 1 WHERE post_id = ?",(post_id,))
-    con.commit()
+    # todo
     return Response(status=202)
 # no response body
 # * ----------------------------------------------
 
-# * /reply/upvote?reply_id=<int>
+# * /reply/upvote?reply_id=<int>&user_id=<int>
 @app.route("/reply/upvote",methods=["POST"])
 def upvote_reply():
     reply_id = request.args.get("reply_id",type=int)
-    if reply_id is None:
+    user_id = request.args.get("user_id",type=int)
+    if reply_id is None or user_id is None:
         return Response(status=400)
-    cur.execute("UPDATE replies SET upvotes = upvotes + 1 WHERE reply_id = ?",(reply_id,))
-    con.commit()
+    # todo
     return Response(status=202)
 # no response body
 # * ----------------------------------------------
 
-# * /reply/downvote?reply_id=<int>
+# * /reply/novote?reply_id=<int>&user_id=<int>
+@app.route("/reply/novote",methods=["POST"])
+def novote_reply():
+    reply_id = request.args.get("reply_id",type=int)
+    user_id = request.args.get("user_id",type=int)
+    if reply_id is None or user_id is None:
+        return Response(status=400)
+    # todo
+    return Response(status=202)
+# no response body
+# * ----------------------------------------------
+
+# * /reply/downvote?reply_id=<int>&user_id=<int>
 @app.route("/reply/downvote",methods=["POST"])
 def downvote_reply():
     reply_id = request.args.get("reply_id",type=int)
-    if reply_id is None:
+    user_id = request.args.get("user_id",type=int)
+    if reply_id is None or user_id is None:
         return Response(status=400)
-    cur.execute("UPDATE replies SET upvotes = upvotes - 1 WHERE reply_id = ?",(reply_id,))
-    con.commit()
+    # todo
     return Response(status=202)
 # no response body
 # * ----------------------------------------------
@@ -227,7 +251,7 @@ def delete_reply():
 # no response body
 # * ----------------------------------------------
 
-# * /user/posts?user_id=<int>&page=<int>&order_by=<string:[time_asc, time_desc, votes_asc, votes_desc]>
+# * /user/posts?user_id=<int>&page=<int>&order_by=<string:[time_asc, time_desc, upvotes_asc, upvotes_desc]>
 @app.route("/user/posts",methods=["GET"])
 def get_user_posts():
     POSTS_PER_PAGE = 15
@@ -240,8 +264,8 @@ def get_user_posts():
         return Response(status=400)
     if order_by == "time_asc": order_by = "time ASC"
     elif order_by == "time_desc": order_by = "time DESC"
-    elif order_by == "votes_asc": order_by = "upvotes ASC"
-    elif order_by == "votes_desc": order_by = "upvotes DESC"
+    elif order_by == "upvotes_asc": order_by = "upvotes ASC"
+    elif order_by == "upvotes_desc": order_by = "upvotes DESC"
     else: return Response(status=400)
     posts = {}
     res = cur.execute("SELECT COUNT(*) FROM posts WHERE user_id = ?",(user_id,))
@@ -257,7 +281,6 @@ def get_user_posts():
         post["post_id"] = row[0]
         post["title"] = row[2]
         post["tags"] = row[3].split("\n")
-        post["body"] = row[4] # ? Remove unnecessary  data
         post["upvotes"] = row[5]
         post["time"] = row[6]
         posts["posts"].append(post)
@@ -272,7 +295,6 @@ def get_user_posts():
 #             "tags": [
 #                 <string:30> :10
 #             ],
-#             "body": <string>
 #             "upvotes": <int>,
 #             "time": <string:19>
 #         } :$POSTS_PER_PAGE
@@ -317,13 +339,14 @@ def search_user():
 #         <string:30> :1674
 #     ]
 #     "page": <int>,
-#     "order_by": <string:[time_asc, time_desc, votes_asc, votes_desc]>
+#     "order_by": <string:[time_asc, time_desc, upvotes_asc, upvotes_desc]>
 # }
 @app.route("/search/tags",methods=["GET"])
 def search_tags():
     pass
 
-@app.route("/post/?post_id=<int>",methods=["GET"])
+# * /post/?post_id=<int>
+@app.route("/post",methods=["GET"])
 def post():
     pass
 
