@@ -257,7 +257,7 @@ def get_user_posts():
         post["post_id"] = row[0]
         post["title"] = row[2]
         post["tags"] = row[3].split("\n")
-        post["body"] = row[4]
+        post["body"] = row[4] # ? Remove unnecessary  data
         post["upvotes"] = row[5]
         post["time"] = row[6]
         posts["posts"].append(post)
@@ -321,6 +321,10 @@ def search_user():
 # }
 @app.route("/search/tags",methods=["GET"])
 def search_tags():
+    pass
+
+@app.route("/post/?post_id=<int>",methods=["GET"])
+def post():
     pass
 
 
