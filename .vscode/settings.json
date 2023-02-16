@@ -6,5 +6,6 @@
             "name": "cqadb",
             "database": "${workspaceFolder:assignment 2}/database/cqadb.sqlite"
         }
-    ]
+    ],
+    "python.formatting.provider": "autopep8"
 }
