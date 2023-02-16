@@ -192,6 +192,8 @@ def delete_post():
     post_id = request.args.get("post_id",type=int)
     if post_id is None:
         return Response(status=400)
+    cur.execute("DELETE FROM post_votes WHERE post_id = ?",(post_id,))
+    # todo delete reply votes
     cur.execute("DELETE FROM replies WHERE post_id = ?",(post_id,))
     cur.execute("DELETE FROM posts WHERE post_id = ?",(post_id,))
     con.commit()
@@ -245,6 +247,7 @@ def delete_reply():
     reply_id = request.args.get("reply_id",type=int)
     if reply_id is None:
         return Response(status=400)
+    cur.execute("DELETE FROM reply_votes WHERE reply_id = ?",(reply_id,))
     cur.execute("DELETE FROM replies WHERE reply_id = ?",(reply_id,))
     con.commit()
     return Response(status=202)
@@ -267,6 +270,9 @@ def get_user_posts():
     elif order_by == "upvotes_asc": order_by = "upvotes ASC"
     elif order_by == "upvotes_desc": order_by = "upvotes DESC"
     else: return Response(status=400)
+    res = cur.execute("SELECT * FROM users WHERE user_id = ?",(user_id,))
+    if res.fetchone() is None:
+        return Response(status=404)
     posts = {}
     res = cur.execute("SELECT COUNT(*) FROM posts WHERE user_id = ?",(user_id,))
     posts["total_pages"] = math.ceil(res.fetchone()[0]/POSTS_PER_PAGE)
@@ -348,9 +354,56 @@ def search_tags():
 # * /post/?post_id=<int>
 @app.route("/post",methods=["GET"])
 def post():
-    pass
-
-
+    post_id = request.args.get("post_id",type=int)
+    if post_id is None:
+        return Response(status=400)
+    res = cur.execute("SELECT * FROM posts WHERE post_id = ?",(post_id,))
+    row = res.fetchone()
+    if row is None:
+        return Response(status=404)
+    post = {}
+    post["post"] = {}
+    post["post"]["post_id"] = row[0]
+    post["post"]["user_id"] = row[1]
+    post["post"]["title"] = row[2]
+    post["post"]["tags"] = row[3].split("\n")
+    post["post"]["body"] = row[4]
+    post["post"]["upvotes"] = row[5]
+    post["post"]["time"] = row[6]
+    post["replies"] = []
+    res = cur.execute("SELECT * FROM replies WHERE post_id = ? ORDER BY upvotes DESC",(post_id,))
+    for row in res:
+        reply = {}
+        reply["reply_id"] = row[0]
+        reply["user_id"] = row[2]
+        reply["body"] = row[3]
+        reply["upvotes"] = row[4]
+        reply["time"] = row[5]
+        post["replies"].append(reply)
+    return post
+# {
+#     "post": {
+#         "post_id": <int>,
+#         "user_id": <int>,
+#         "title": <string:500>,
+#         "tags": [
+#             <string:30> :10
+#         ],
+#         "body": <string>,
+#         "upvotes": <int>,
+#         "time": <string:19>
+#     },
+#     "replies": [
+#         {
+#             "reply_id": <int>,
+#             "user_id": <int>,
+#             "body": <string>,
+#             "upvotes": <int>,
+#             "time": <string:19>
+#         } :inf
+#     ]
+# }
+# * ----------------------------------------------
 
 # * /all_tags
 @app.route("/all_tags",methods=["GET"])
