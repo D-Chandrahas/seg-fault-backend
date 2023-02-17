@@ -1,5 +1,6 @@
 /.vscode
 /todo.txt
+/stackexchange-xml-converter
 *.session.sql
 /database/cqadb.db
 /database management/insert_posts.sql

@@ -1,10 +1,17 @@
-with open('csv/Tags.csv','r') as f:
-    text = f.read()
-
-
 import re
+import pandas
+from io import StringIO
 
-# text = re.sub(r"[^\x00-\x7F]+",r"", text)
+only_tags = StringIO()
+
+df = pandas.read_csv('csv/Tags.csv', encoding='utf-8', keep_default_na=False)
+df = df['TagName']
+df.to_csv(only_tags, encoding='utf-8', header=False, index=False)
+
+
+text = only_tags.getvalue()
+
+text = re.sub(r"[^\x00-\x7F]+",r"", text)
 text = re.sub(r"'",r"''", text)
 tags = text.splitlines()
 for i, name in enumerate(tags):

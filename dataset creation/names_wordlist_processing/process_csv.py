@@ -1,8 +1,14 @@
-with open('csv/Users.csv','r',encoding='utf-8') as f:
-    text = f.read()
-
-
 import re
+import pandas
+from io import StringIO
+
+only_users = StringIO()
+
+df = pandas.read_csv('csv/Users.csv', encoding='utf-8')
+df = df['DisplayName']
+df.to_csv(only_users, encoding='utf-8', header=False, index=False)
+
+text = only_users.getvalue()
 
 text = re.sub(r"[^\x00-\x7F]+",r"", text)
 text = re.sub(r"'",r"''", text)
