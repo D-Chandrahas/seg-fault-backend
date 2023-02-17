@@ -1,5 +1,6 @@
 import random
 import string
+from randomtimestamp import randomtimestamp
 
 
 with open ("names_wordlist.txt", "r") as f:
@@ -34,7 +35,7 @@ total_posts = 0
 
 with open("../database management/insert_posts.sql", "w") as f, open("../database management/insert_post_votes.sql", "w") as f2:
 
-    f.write("INSERT INTO posts (user_id, title, tags, body, upvotes) VALUES\n")
+    f.write("INSERT INTO posts (user_id, title, tags, body, upvotes, time) VALUES\n")
     f2.write("INSERT INTO post_votes VALUES\n")
 
     for i in range(10000):
@@ -49,19 +50,22 @@ with open("../database management/insert_posts.sql", "w") as f, open("../databas
             body_len = random.randint(20, 100)
             body = ' '.join(random.choice(wordlist) for _ in range(body_len))
             upvotes = random.randint(-3, 10)
-            f.write(f"({user_id}, '{title}', '{tags}', '{body}', {upvotes}),\n")
+            time = randomtimestamp(start_year = 2000, pattern = "%Y-%m-%d %H:%M:%S", text=True)
+            f.write(f"({user_id}, '{title}', '{tags}', '{body}', {upvotes}, '{time}'),\n")
             total_posts += 1
             if upvotes != 0:
                 vote_char = "'u'" if upvotes > 0 else "'d'"
-                for _ in range(abs(upvotes)):
-                    f2.write(f"({total_posts}, {random.randint(1,10000)}, {vote_char}),\n")
-                for _ in range(random.randint(0, abs(upvotes))):
-                    f2.write(f"({total_posts}, {random.randint(1,10000)}, 'u'),\n")
-                    f2.write(f"({total_posts}, {random.randint(1,10000)}, 'd'),\n")
+                vote_user_ids = random.sample(range(1,10001), k = abs(upvotes) + 2 * random.randint(0, abs(upvotes)))
+                for vote_user_id in vote_user_ids[:abs(upvotes)]:
+                    f2.write(f"({total_posts}, {vote_user_id}, {vote_char}),\n")
+                for vote_user_id1, vote_user_id2 in zip(vote_user_ids[abs(upvotes) : abs(upvotes) + ((len(vote_user_ids) - abs(upvotes))//2)], vote_user_ids[abs(upvotes) + ((len(vote_user_ids) - abs(upvotes))//2):]):
+                    f2.write(f"({total_posts}, {vote_user_id1}, 'u'),\n")
+                    f2.write(f"({total_posts}, {vote_user_id2}, 'd'),\n")
             else:
-                for _ in range(random.randint(0, 5)):
-                    f2.write(f"({total_posts}, {random.randint(1,10000)}, 'u'),\n")
-                    f2.write(f"({total_posts}, {random.randint(1,10000)}, 'd'),\n")
+                vote_user_ids = random.sample(range(1,10001), k = 2 * random.randint(0, 5))
+                for vote_user_id1, vote_user_id2 in zip(vote_user_ids[:len(vote_user_ids)//2], vote_user_ids[len(vote_user_ids)//2:]):
+                    f2.write(f"({total_posts}, {vote_user_id1}, 'u'),\n")
+                    f2.write(f"({total_posts}, {vote_user_id2}, 'd'),\n")
 
     user_id = 10000
     user_posts = 1
@@ -73,7 +77,8 @@ with open("../database management/insert_posts.sql", "w") as f, open("../databas
     body_len = random.randint(20, 100)
     body = ' '.join(random.choice(wordlist) for _ in range(body_len))
     upvotes = 1
-    f.write(f"({user_id}, '{title}', '{tags}', '{body}', {upvotes})")
+    time = randomtimestamp(start_year = 2000, pattern = "%Y-%m-%d %H:%M:%S", text=True)
+    f.write(f"({user_id}, '{title}', '{tags}', '{body}', {upvotes}, '{time}')")
     total_posts += 1
     f2.write(f"({total_posts}, {random.randint(1,10000)}, 'u')")
 
@@ -81,7 +86,7 @@ total_replies = 0
 
 with open("../database management/insert_replies.sql", "w") as f, open("../database management/insert_reply_votes.sql", "w") as f2:
 
-    f.write("INSERT INTO replies (post_id, user_id, body, upvotes) VALUES\n")
+    f.write("INSERT INTO replies (post_id, user_id, body, upvotes, time) VALUES\n")
     f2.write("INSERT INTO reply_votes VALUES\n")
 
     for i in range(total_posts-1):
@@ -92,19 +97,22 @@ with open("../database management/insert_replies.sql", "w") as f, open("../datab
             body_len = random.randint(20, 100)
             body = ' '.join(random.choice(wordlist) for _ in range(body_len))
             upvotes = random.randint(-3, 10)
-            f.write(f"({post_id}, {user_id}, '{body}', {upvotes}),\n")
+            time = randomtimestamp(start_year = 2000, pattern = "%Y-%m-%d %H:%M:%S", text=True)
+            f.write(f"({post_id}, {user_id}, '{body}', {upvotes}, '{time}'),\n")
             total_replies += 1
             if upvotes != 0:
                 vote_char = "'u'" if upvotes > 0 else "'d'"
-                for _ in range(abs(upvotes)):
-                    f2.write(f"({total_replies}, {random.randint(1,10000)}, {vote_char}),\n")
-                for _ in range(random.randint(0, abs(upvotes))):
-                    f2.write(f"({total_replies}, {random.randint(1,10000)}, 'u'),\n")
-                    f2.write(f"({total_replies}, {random.randint(1,10000)}, 'd'),\n")
+                vote_user_ids = random.sample(range(1,10001), k = abs(upvotes) + 2 * random.randint(0, abs(upvotes)))
+                for vote_user_id in vote_user_ids[:abs(upvotes)]:
+                    f2.write(f"({total_replies}, {vote_user_id}, {vote_char}),\n")
+                for vote_user_id1, vote_user_id2 in zip(vote_user_ids[abs(upvotes) : abs(upvotes) + ((len(vote_user_ids) - abs(upvotes))//2)], vote_user_ids[abs(upvotes) + ((len(vote_user_ids) - abs(upvotes))//2):]):
+                    f2.write(f"({total_replies}, {vote_user_id1}, 'u'),\n")
+                    f2.write(f"({total_replies}, {vote_user_id2}, 'd'),\n")
             else:
-                for _ in range(random.randint(0, 5)):
-                    f2.write(f"({total_replies}, {random.randint(1,10000)}, 'u'),\n")
-                    f2.write(f"({total_replies}, {random.randint(1,10000)}, 'd'),\n")
+                vote_user_ids = random.sample(range(1,10001), k = 2 * random.randint(0, 5))
+                for vote_user_id1, vote_user_id2 in zip(vote_user_ids[:len(vote_user_ids)//2], vote_user_ids[len(vote_user_ids)//2:]):
+                    f2.write(f"({total_replies}, {vote_user_id1}, 'u'),\n")
+                    f2.write(f"({total_replies}, {vote_user_id2}, 'd'),\n")
     
     post_id = total_posts
     post_replies = 1
@@ -112,7 +120,8 @@ with open("../database management/insert_replies.sql", "w") as f, open("../datab
     body_len = random.randint(20, 100)
     body = ' '.join(random.choice(wordlist) for _ in range(body_len))
     upvotes = 1
-    f.write(f"({post_id}, {user_id}, '{body}', {upvotes})")
+    time = randomtimestamp(start_year = 2000, pattern = "%Y-%m-%d %H:%M:%S", text=True)
+    f.write(f"({post_id}, {user_id}, '{body}', {upvotes}, '{time}')")
     total_replies += 1
     f2.write(f"({total_replies}, {random.randint(1,10000)}, 'u')")
 
