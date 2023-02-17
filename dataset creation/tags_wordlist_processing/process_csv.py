@@ -24,3 +24,6 @@ print(len(tags))
 
 with open('../tags_wordlist.txt','w') as f:
     f.write('\n'.join(tags))
+
+with open('../../database/tags.txt','w') as f:
+    f.write('\n'.join(tags))
