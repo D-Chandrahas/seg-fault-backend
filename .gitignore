@@ -1,3 +1,4 @@
+/.vscode
 /todo.txt
 *.session.sql
 /database/cqadb.db
