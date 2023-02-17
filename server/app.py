@@ -8,6 +8,7 @@ app = Flask(__name__)
 con = sqlite3.connect("../database/cqadb.sqlite",check_same_thread=False)
 con.execute("PRAGMA foreign_keys = ON")
 cur = con.cursor()
+cur2 = con.cursor()
 
 with open("../database/tags.txt",'r') as f:
     all_tags = f.read().splitlines()
@@ -92,7 +93,9 @@ def novote_post():
         return Response(status=400)
     res = cur.execute("SELECT vote FROM post_votes WHERE post_id = ? AND user_id = ?",(post_id,user_id))
     row = res.fetchone()
-    if row[0] == 'd':
+    if row is None:
+        pass
+    elif row[0] == 'd':
         cur.execute("DELETE FROM post_votes WHERE post_id = ? AND user_id = ?",(post_id,user_id))
         cur.execute("UPDATE posts SET upvotes = upvotes + 1 WHERE post_id = ?",(post_id,))
         con.commit()
@@ -126,6 +129,7 @@ def downvote_post():
     elif row[0] == 'u':
         cur.execute("UPDATE post_votes SET vote = 'd' WHERE post_id = ? AND user_id = ?",(post_id,user_id))
         cur.execute("UPDATE posts SET upvotes = upvotes - 2 WHERE post_id = ?",(post_id,))
+        con.commit()
     return Response(status=200)
 # no response body
 # * ----------------------------------------------
@@ -172,7 +176,9 @@ def novote_reply():
         return Response(status=400)
     res = cur.execute("SELECT vote FROM reply_votes WHERE reply_id = ? AND user_id = ?",(reply_id,user_id))
     row = res.fetchone()
-    if row[0] == 'd':
+    if row is None:
+        pass
+    elif row[0] == 'd':
         cur.execute("DELETE FROM reply_votes WHERE reply_id = ? AND user_id = ?",(reply_id,user_id))
         cur.execute("UPDATE replies SET upvotes = upvotes + 1 WHERE reply_id = ?",(reply_id,))
         con.commit()
@@ -206,6 +212,7 @@ def downvote_reply():
     elif row[0] == 'u':
         cur.execute("UPDATE reply_votes SET vote = 'd' WHERE reply_id = ? AND user_id = ?",(reply_id,user_id))
         cur.execute("UPDATE replies SET upvotes = upvotes - 2 WHERE reply_id = ?",(reply_id,))
+        con.commit()
     return Response(status=200)
 # no response body
 # * ----------------------------------------------
@@ -392,11 +399,12 @@ def get_user_posts():
     if posts["total_pages"] == 0:
         return posts
     if page > posts["total_pages"]:
-        return Response(status=400)
+        return Response(status=404)
     res = cur.execute(f"SELECT * FROM posts WHERE user_id = ? ORDER BY {order_by} LIMIT ? OFFSET ?",(user_id, POSTS_PER_PAGE,(page-1)*POSTS_PER_PAGE))
     for row in res:
         post = {}
         post["post_id"] = row[0]
+        post["user_id"] = row[1]
         post["title"] = row[2]
         post["tags"] = row[3].split("\n")
         post["upvotes"] = row[5]
@@ -409,6 +417,7 @@ def get_user_posts():
 #     "posts": [
 #         {
 #             "post_id": <int>,
+#             "user_id": <int>,
 #             "title": <string:500>,
 #             "tags": [
 #                 <string:30> :10
@@ -438,7 +447,7 @@ def search_user():
     if usernames["total_pages"] == 0:
         return usernames
     if page > usernames["total_pages"]:
-        return Response(status=400)
+        return Response(status=404)
     res = cur.execute("SELECT username FROM users WHERE username LIKE ? LIMIT ? OFFSET ?",("%"+username+"%", USERNAMES_PER_PAGE,(page-1)*USERNAMES_PER_PAGE))
     for row in res:
         usernames["usernames"].append(row[0])
@@ -465,12 +474,16 @@ def search_tags():
 
 # * ----------------------------------------------
 
-# * /post/?post_id=<int>
+# * /post?post_id=<int>&user_id=<int>
 @app.route("/post",methods=["GET"])
 def post():
     post_id = request.args.get("post_id",type=int)
-    if post_id is None:
+    user_id = request.args.get("user_id",type=int)
+    if post_id is None or user_id is None:
         return Response(status=400)
+    res = cur.execute("SELECT * FROM users WHERE user_id = ?",(user_id,))
+    if res.fetchone() is None:
+        return Response(status=404)
     res = cur.execute("SELECT * FROM posts WHERE post_id = ?",(post_id,))
     row = res.fetchone()
     if row is None:
@@ -484,6 +497,15 @@ def post():
     post["post"]["body"] = row[4]
     post["post"]["upvotes"] = row[5]
     post["post"]["time"] = row[6]
+    res = cur.execute("SELECT vote FROM post_votes WHERE post_id = ? AND user_id = ?",(post_id,user_id))
+    row = res.fetchone()
+    if row is None:
+        post["post"]["vote"] = "n"
+    elif row[0] == "u":
+        post["post"]["vote"] = "u"
+    elif row[0] == "d":
+        post["post"]["vote"] = "d"
+
     post["replies"] = []
     res = cur.execute("SELECT * FROM replies WHERE post_id = ? ORDER BY upvotes DESC",(post_id,))
     for row in res:
@@ -493,6 +515,14 @@ def post():
         reply["body"] = row[3]
         reply["upvotes"] = row[4]
         reply["time"] = row[5]
+        res2 = cur2.execute("SELECT vote FROM reply_votes WHERE reply_id = ? AND user_id = ?",(reply["reply_id"],user_id))
+        row2 = res2.fetchone()
+        if row2 is None:
+            reply["vote"] = "n"
+        elif row2[0] == "u":
+            reply["vote"] = "u"
+        elif row2[0] == "d":
+            reply["vote"] = "d"
         post["replies"].append(reply)
     return post
 # {
@@ -505,7 +535,8 @@ def post():
 #         ],
 #         "body": <string>,
 #         "upvotes": <int>,
-#         "time": <string:19>
+#         "time": <string:19>,
+#         "vote": <string:[u, d, n]>
 #     },
 #     "replies": [
 #         {
@@ -513,7 +544,8 @@ def post():
 #             "user_id": <int>,
 #             "body": <string>,
 #             "upvotes": <int>,
-#             "time": <string:19>
+#             "time": <string:19>,
+#             "vote": <string:[u, d, n]>
 #         } :inf
 #     ]
 # }
