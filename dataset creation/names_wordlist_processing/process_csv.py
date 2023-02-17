@@ -4,7 +4,7 @@ from io import StringIO
 
 only_users = StringIO()
 
-df = pandas.read_csv('csv/Users.csv', encoding='utf-8')
+df = pandas.read_csv('csv/Users.csv', encoding='utf-8', keep_default_na=False)
 df = df['DisplayName']
 df.to_csv(only_users, encoding='utf-8', header=False, index=False)
 
