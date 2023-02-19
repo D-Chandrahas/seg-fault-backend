@@ -51,7 +51,7 @@ with open("../database management/insert_posts.sql", "w") as f, open("../databas
             body = ' '.join(random.choice(wordlist) for _ in range(body_len))
             upvotes = random.randint(-3, 10)
             time = randomtimestamp(start_year = 2000, pattern = "%Y-%m-%d %H:%M:%S", text=True)
-            f.write(f"({user_id}, '{title}', '{tags}', '{body}', {upvotes}, '{time}'),\n")
+            f.write(f"({user_id}, '{title}', char(10) || '{tags}' || char(10), '{body}', {upvotes}, '{time}'),\n")
             total_posts += 1
             if upvotes != 0:
                 vote_char = "'u'" if upvotes > 0 else "'d'"
@@ -78,7 +78,7 @@ with open("../database management/insert_posts.sql", "w") as f, open("../databas
     body = ' '.join(random.choice(wordlist) for _ in range(body_len))
     upvotes = 1
     time = randomtimestamp(start_year = 2000, pattern = "%Y-%m-%d %H:%M:%S", text=True)
-    f.write(f"({user_id}, '{title}', '{tags}', '{body}', {upvotes}, '{time}')")
+    f.write(f"({user_id}, '{title}', char(10) || '{tags}' || char(10), '{body}', {upvotes}, '{time}')")
     total_posts += 1
     f2.write(f"({total_posts}, {random.randint(1,10000)}, 'u')")
 

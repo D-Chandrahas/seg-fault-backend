@@ -239,7 +239,7 @@ def create_post():
     for i,tag in enumerate(tags):
         if tag not in all_tags:
             tags.pop(i)
-    tags = "\n".join(tags)
+    tags = "\n"+"\n".join(tags)+"\n"
     body = request.json.get("body")
     if user_id is None or title is None or body is None:
         return Response(status=400)
@@ -274,7 +274,7 @@ def edit_post():
     for i,tag in enumerate(tags):
         if tag not in all_tags:
             tags.pop(i)
-    tags = "\n".join(tags)
+    tags = "\n"+"\n".join(tags)+"\n"
     body = request.json.get("body")
     if post_id is None or title is None or body is None:
         return Response(status=400)
@@ -373,15 +373,16 @@ def delete_reply():
 # no response body
 # * ----------------------------------------------
 
-# * /user/posts?user_id=<int>&page=<int>&order_by=<opt:string:[time_asc, time_desc, upvotes_asc, upvotes_desc]>
+# * /user/posts?user_id=<int>&page=<int=1>&order_by=<string=upvotes_desc:[time_asc, time_desc, upvotes_asc, upvotes_desc]>
 @app.route("/user/posts",methods=["GET"])
 def get_user_posts():
     POSTS_PER_PAGE = 15
     user_id = request.args.get("user_id",type=int)
-    order_by = request.args.get("order_by",type=str)
+    order_by = request.args.get("order_by")
     page = request.args.get("page",type=int)
-    if user_id is None or page is None:
+    if user_id is None:
         return Response(status=400)
+    if page is None: page = 1
     if page < 1:
         return Response(status=400)
     if order_by is None: order_by = "upvotes DESC"
@@ -407,7 +408,7 @@ def get_user_posts():
         post["post_id"] = row[0]
         post["user_id"] = row[1]
         post["title"] = row[2]
-        post["tags"] = row[3].split("\n")
+        post["tags"] = row[3].split("\n")[1:-1]
         post["upvotes"] = row[5]
         post["time"] = row[6]
         posts["posts"].append(post)
@@ -430,7 +431,7 @@ def get_user_posts():
 # }
 # * ----------------------------------------------
 
-# * /user/posts/all?user_id=<int>&order_by=<opt:string:[time_asc, time_desc, upvotes_asc, upvotes_desc]>
+# * /user/posts/all?user_id=<int>&order_by=<string=upvotes_desc:[time_asc, time_desc, upvotes_asc, upvotes_desc]>
 @app.route("/user/posts/all",methods=["GET"])
 def get_all_user_posts():
     user_id = request.args.get("user_id",type=int)
@@ -454,7 +455,7 @@ def get_all_user_posts():
         post["post_id"] = row[0]
         post["user_id"] = row[1]
         post["title"] = row[2]
-        post["tags"] = row[3].split("\n")
+        post["tags"] = row[3].split("\n")[1:-1]
         post["upvotes"] = row[5]
         post["time"] = row[6]
         posts["posts"].append(post)
@@ -476,14 +477,15 @@ def get_all_user_posts():
 # }
 # * ----------------------------------------------
 
-# * /search/user?username=<string:250>&page=<int>
+# * /search/user?username=<string:250>&page=<int=1>
 @app.route("/search/user",methods=["GET"])
 def search_user():
     USERNAMES_PER_PAGE = 15
     username = request.args.get("username")
     page = request.args.get("page",type=int)
-    if username is None or page is None:
+    if username is None:
         return Response(status=400)
+    if page is None: page = 1
     if page < 1:
         return Response(status=400)
     username = username.strip().replace(" ","%")
@@ -544,13 +546,76 @@ def search_user_all():
 #     "tags": [
 #         <string:30>
 #     ] :10,
-#     "page": <int>,
-#     "order_by": <opt:string:[time_asc, time_desc, upvotes_asc, upvotes_desc]>
+#     "page": <int=1>,
+#     "order_by": <string=upvotes_desc:[time_asc, time_desc, upvotes_asc, upvotes_desc]>
 # }
 @app.route("/search/tags",methods=["GET"])
 def search_tags():
-    pass
-
+    POSTS_PER_PAGE = 15
+    tags = request.json.get("tags")
+    page = request.json.get("page")
+    order_by = request.json.get("order_by")
+    if tags is None:
+        return Response(status=400)
+    if page is None: page = 1
+    if page < 1:
+        return Response(status=400)
+    if order_by is None: order_by = "upvotes DESC"
+    elif order_by == "time_asc": order_by = "time ASC"
+    elif order_by == "time_desc": order_by = "time DESC"
+    elif order_by == "upvotes_asc": order_by = "upvotes ASC"
+    elif order_by == "upvotes_desc": order_by = "upvotes DESC"
+    else: return Response(status=400)
+    query1 = "SELECT * FROM ( "
+    query2 = "SELECT COUNT(*) FROM ( "
+    query1_params = []
+    query2_params = []
+    tag_queries = []
+    for tag in tags:
+        tag_queries.append("SELECT * FROM posts WHERE tags LIKE ?")
+        query1_params.append(f"%\n{tag}\n%")
+        query2_params.append(f"%\n{tag}\n%")
+    query1 += " INTERSECT ".join(tag_queries)
+    query2 += " INTERSECT ".join(tag_queries)
+    query1 += f" ) ORDER BY {order_by} LIMIT ? OFFSET ?"
+    query1_params.append(POSTS_PER_PAGE)
+    query1_params.append((page-1)*POSTS_PER_PAGE)
+    query2 += " )"
+    posts = {}
+    res = cur.execute(query2,query2_params)
+    posts["total_pages"] = math.ceil(res.fetchone()[0]/POSTS_PER_PAGE)
+    posts["posts"] = []
+    if posts["total_pages"] == 0:
+        return posts
+    if page > posts["total_pages"]:
+        return Response(status=404)
+    res = cur.execute(query1,query1_params)
+    for row in res:
+        post = {}
+        post["post_id"] = row[0]
+        post["user_id"] = row[1]
+        post["title"] = row[2]
+        post["tags"] = row[3].split("\n")[1:-1]
+        post["upvotes"] = row[5]
+        post["time"] = row[6]
+        posts["posts"].append(post)
+    
+    return posts
+# {
+#     "total_pages": <int>,
+#     "posts": [
+#         {
+#             "post_id": <int>,
+#             "user_id": <int>,
+#             "title": <string:500>,
+#             "tags": [
+#                 <string:30>
+#             ] :10,
+#             "upvotes": <int>,
+#             "time": <string:19>
+#         }
+#     ] :$POSTS_PER_PAGE
+# }
 # * ----------------------------------------------
 
 # * /search/tags/all
@@ -558,12 +623,56 @@ def search_tags():
 #     "tags": [
 #         <string:30>
 #     ] :10,
-#     "order_by": <opt:string:[time_asc, time_desc, upvotes_asc, upvotes_desc]>
+#     "order_by": <string=upvotes_desc:[time_asc, time_desc, upvotes_asc, upvotes_desc]>
 # }
 @app.route("/search/tags/all",methods=["GET"])
 def search_tags_all():
-    pass
-
+    tags = request.json.get("tags")
+    order_by = request.json.get("order_by")
+    if tags is None:
+        return Response(status=400)
+    if order_by is None: order_by = "upvotes DESC"
+    elif order_by == "time_asc": order_by = "time ASC"
+    elif order_by == "time_desc": order_by = "time DESC"
+    elif order_by == "upvotes_asc": order_by = "upvotes ASC"
+    elif order_by == "upvotes_desc": order_by = "upvotes DESC"
+    else: return Response(status=400)
+    query1 = "SELECT * FROM ( "
+    query1_params = []
+    tag_queries = []
+    for tag in tags:
+        tag_queries.append("SELECT * FROM posts WHERE tags LIKE ?")
+        query1_params.append(f"%\n{tag}\n%")
+    query1 += " INTERSECT ".join(tag_queries)
+    query1 += f" ) ORDER BY {order_by}"
+    posts = {}
+    posts["posts"] = []
+    res = cur.execute(query1,query1_params)
+    for row in res:
+        post = {}
+        post["post_id"] = row[0]
+        post["user_id"] = row[1]
+        post["title"] = row[2]
+        post["tags"] = row[3].split("\n")[1:-1]
+        post["upvotes"] = row[5]
+        post["time"] = row[6]
+        posts["posts"].append(post)
+    
+    return posts
+# {
+#     "posts": [
+#         {
+#             "post_id": <int>,
+#             "user_id": <int>,
+#             "title": <string:500>,
+#             "tags": [
+#                 <string:30>
+#             ] :10,
+#             "upvotes": <int>,
+#             "time": <string:19>
+#         }
+#     ] :inf
+# }
 # * ----------------------------------------------
 
 # * /post?post_id=<int>&user_id=<int>
@@ -585,7 +694,7 @@ def post():
     post["post"]["post_id"] = row[0]
     post["post"]["user_id"] = row[1]
     post["post"]["title"] = row[2]
-    post["post"]["tags"] = row[3].split("\n")
+    post["post"]["tags"] = row[3].split("\n")[1:-1]
     post["post"]["body"] = row[4]
     post["post"]["upvotes"] = row[5]
     post["post"]["time"] = row[6]
