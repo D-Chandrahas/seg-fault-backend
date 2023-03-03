@@ -1,9 +1,12 @@
 from flask import Flask, request, Response
 import sqlite3
 import math
+from flask_cors import CORS
 
 
 app = Flask(__name__)
+CORS(app)
+
 
 con = sqlite3.connect("../database/cqadb.sqlite",check_same_thread=False)
 con.execute("PRAGMA foreign_keys = ON")
