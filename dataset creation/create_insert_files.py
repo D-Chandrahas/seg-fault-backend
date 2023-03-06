@@ -2,6 +2,8 @@ import random
 import string
 from randomtimestamp import randomtimestamp
 
+# ! run from script directory only
+
 
 with open ("names_wordlist.txt", "r") as f:
     names = f.read().splitlines()
