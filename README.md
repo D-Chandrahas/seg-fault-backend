@@ -1,4 +1,4 @@
-## Implemented Interactions
+## Implemented Requests
 - Register
   - Login
 - create post/question with title, body & tags
