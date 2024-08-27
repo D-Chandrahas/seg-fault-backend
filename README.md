@@ -17,3 +17,5 @@
 - upvote reply
   - downvote reply
   - remove reply vote
+
+### See comments in [app.py](/server/app.py) for request/response format.
